@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>뭐먹을지 모르겠따~~~~</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;}
+html,body{height:100%;background:#111;}
+body{display:flex;flex-direction:column;align-items:center;min-height:100vh;color:#fff;padding:32px 20px 40px;}
+.hero{text-align:center;margin-bottom:32px;}
+.hearts{font-size:28px;margin-bottom:14px;animation:float 2.5s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.title{font-size:22px;font-weight:700;margin-bottom:8px;line-height:1.4;}
+.subtitle{font-size:15px;color:rgba(255,255,255,0.65);}
+.heart{color:#ff4d6d;}
+.result-box{width:100%;max-width:400px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,255,255,0.2);border-radius:24px;padding:36px 24px;text-align:center;margin-bottom:24px;min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:all .25s;}
+.result-emoji{font-size:52px;margin-bottom:10px;}
+.result-name{font-size:30px;font-weight:700;margin-bottom:4px;}
+.result-cat{font-size:13px;color:rgba(255,255,255,0.55);}
+.result-hint{font-size:14px;color:rgba(255,255,255,0.45);}
+.spin-btn{width:100%;max-width:400px;padding:18px;background:#ff4d6d;border:none;border-radius:16px;color:#fff;font-size:18px;font-weight:700;cursor:pointer;margin-bottom:20px;transition:transform .1s,background .2s;}
+.spin-btn:active{transform:scale(0.97);}
+.spin-btn:hover{background:#ff2d55;}
+.spin-btn:disabled{background:#555;cursor:not-allowed;}
+.cats{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px;width:100%;max-width:400px;}
+.cat{padding:8px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.25);background:transparent;color:rgba(255,255,255,0.75);font-size:13px;cursor:pointer;transition:all .15s;}
+.cat.on{background:rgba(255,77,109,0.35);border-color:#ff4d6d;color:#fff;font-weight:600;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%;max-width:400px;}
+.item{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:10px 6px;text-align:center;font-size:13px;color:rgba(255,255,255,0.75);transition:all .2s;}
+.item.pick{background:rgba(255,77,109,0.35);border-color:#ff4d6d;color:#fff;font-weight:700;}
+.sec{font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:10px;align-self:flex-start;width:100%;max-width:400px;}
+@keyframes pop{0%,100%{transform:scale(1);}40%{transform:scale(1.1);}}
+.pop{animation:pop .35s ease;}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hearts">💑</div>
+  <div class="title">뭐먹을지 모르겠따~~~~~~</div>
+  <div class="subtitle"> <span class="heart">♥</span> 메뉴 고르기</div>
+</div>
+
+<div class="result-box" id="rbox">
+  <div class="result-hint">버튼을 눌러서 오늘의 메뉴를 정해보세요!</div>
+</div>
+
+<button class="spin-btn" id="sbtn" onclick="spin()">🎲 랜덤 뽑기!</button>
+
+<div class="sec">카테고리</div>
+<div class="cats">
+  <button class="cat on" onclick="setCat('전체',this)">전체</button>
+  <button class="cat" onclick="setCat('한식',this)">🍚 한식</button>
+  <button class="cat" onclick="setCat('일식',this)">🍣 일식</button>
+  <button class="cat" onclick="setCat('중식',this)">🥟 중식</button>
+  <button class="cat" onclick="setCat('양식',this)">🍝 양식</button>
+  <button class="cat" onclick="setCat('분식',this)">🌭 분식</button>
+</div>
+
+<div class="sec">메뉴 목록</div>
+<div class="grid" id="grid"></div>
+
+<script>
+const all=[
+  {n:'삼겹살',e:'🥩',c:'한식'},{n:'된장찌개',e:'🍲',c:'한식'},{n:'김치찌개',e:'🍲',c:'한식'},
+  {n:'불고기',e:'🥩',c:'한식'},{n:'비빔밥',e:'🍚',c:'한식'},{n:'순두부찌개',e:'🍲',c:'한식'},
+  {n:'갈비탕',e:'🍜',c:'한식'},{n:'냉면',e:'🍜',c:'한식'},{n:'초밥',e:'🍣',c:'일식'},
+  {n:'라멘',e:'🍜',c:'일식'},{n:'돈카츠',e:'🍱',c:'일식'},{n:'우동',e:'🍜',c:'일식'},
+  {n:'규동',e:'🍚',c:'일식'},{n:'짜장면',e:'🍝',c:'중식'},{n:'짬뽕',e:'🍜',c:'중식'},
+  {n:'탕수육',e:'🍖',c:'중식'},{n:'마라탕',e:'🌶️',c:'중식'},{n:'딤섬',e:'🥟',c:'중식'},
+  {n:'파스타',e:'🍝',c:'양식'},{n:'피자',e:'🍕',c:'양식'},{n:'스테이크',e:'🥩',c:'양식'},
+  {n:'리조또',e:'🍚',c:'양식'},{n:'햄버거',e:'🍔',c:'양식'},{n:'떡볶이',e:'🌶️',c:'분식'},
+  {n:'순대',e:'🌭',c:'분식'},{n:'튀김',e:'🍟',c:'분식'},{n:'김밥',e:'🍙',c:'분식'},
+  {n:'라면',e:'🍜',c:'분식'},
+];
+let cat='전체', picked=null;
+
+function filtered(){return cat==='전체'?all:all.filter(m=>m.c===cat);}
+
+function setCat(c,btn){
+  cat=c;
+  document.querySelectorAll('.cat').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderGrid();
+}
+
+function renderGrid(){
+  document.getElementById('grid').innerHTML=filtered().map(m=>
+    `<div class="item${picked&&picked.n===m.n?' pick':''}">${m.e} ${m.n}</div>`
+  ).join('');
+}
+
+function spin(){
+  const btn=document.getElementById('sbtn');
+  btn.disabled=true;btn.textContent='뽑는 중...';
+  const list=filtered();
+  let i=0,tot=16;
+  const iv=setInterval(()=>{
+    const r=list[Math.floor(Math.random()*list.length)];
+    showResult(r,false);i++;
+    if(i>=tot){
+      clearInterval(iv);
+      const final=list[Math.floor(Math.random()*list.length)];
+      picked=final;showResult(final,true);renderGrid();
+      btn.disabled=false;btn.textContent='🎲 다시 뽑기!';
+    }
+  },80);
+}
+
+function showResult(m,final){
+  const b=document.getElementById('rbox');
+  if(final){
+    b.innerHTML=`<div class="result-emoji">${m.e}</div><div class="result-name">${m.n}</div><div class="result-cat">${m.c} · 오늘의 메뉴 결정! 🎉</div>`;
+    b.classList.remove('pop');void b.offsetWidth;b.classList.add('pop');
+  } else {
+    b.innerHTML=`<div class="result-emoji" style="opacity:.6">${m.e}</div><div class="result-name" style="opacity:.6">${m.n}</div>`;
+  }
+}
+
+renderGrid();
+</script>
+</body>
+</html>
